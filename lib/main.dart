@@ -1,15 +1,29 @@
 import 'package:flutter/material.dart';
 
-void main() => runApp(Quizzler());
+void main() => runApp(const Quizzler());
+
+class Question {
+  final bool answer;
+  final String question;
+  const Question(this.question, this.answer);
+}
 
 class Quizzler extends StatelessWidget {
+  const Quizzler({Key? key}) : super(key: key);
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       home: Scaffold(
-        //TODO: 6.ปรับปรุง UI ตามชอบ
-        backgroundColor: Colors.white,
-        body: SafeArea(
+        backgroundColor: Colors.grey[200],
+        appBar: AppBar(
+            centerTitle: true,
+            title: const Text(
+              "Quiz App",
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 30),
+            ),
+            backgroundColor: Colors.grey[850]),
+        body: const SafeArea(
           child: Padding(
             padding: EdgeInsets.symmetric(horizontal: 10.0),
             child: QuizPage(),
@@ -21,33 +35,65 @@ class Quizzler extends StatelessWidget {
 }
 
 class QuizPage extends StatefulWidget {
+  const QuizPage({Key? key}) : super(key: key);
+
   @override
   _QuizPageState createState() => _QuizPageState();
 }
 
 class _QuizPageState extends State<QuizPage> {
-  //create an empty list
-  //TODO: 2.ปรับปรุงให้ scoreKeeper ให้เริ่มต้นเป็นลิสต์ว่าง
-  List<Icon> scoreKeeper = [
-    Icon(
-      Icons.check,
-      color: Colors.green,
-    ),
-    Icon(
-      Icons.close,
-      color: Colors.red,
-    ),
+  List<Icon> scoreKeeper = [];
+  List<Icon> lastScoreKeeper = [];
+  List<Question> questions = const [
+    Question(
+        'Bob bought 10 apples, for 5\$ each. Is temperature at the surface of the sun more than 6,600 Celsius?',
+        false),
+    Question(
+        'From the fact that there is a quantum property of electrons called spin, does electron actually spin?',
+        false),
+    Question(
+        'In python programming lanuage, you can put as many "yield" keyword as you want in a function.',
+        true),
+    Question('Github was created in 2007.', false),
+    Question(
+        'In python programming lanuage, default of "str(object)" will call "__str__" and then "__repr__" if that "__str__" method is not found.',
+        true),
+    Question('HTML with CSS is turing complete.', true),
+    Question('Does every program that works on C work on C++?', false),
+    Question('"React" is a frontend framework.', false),
+    Question('Squirrel can survive impacts at their terminal velocity.', true),
   ];
-
-  //TODO: 4.ปรับปรุงคำถามและคำตอบที่สอดคล้องกัน โดยให้มีคำถาม-คำตอบอย่างน้อย 5 ข้อ อาจเป็นคำถามใหม่ทั้งหมดก็ได้
-  List<String> questions = [
-    '1 + 1 = 2',
-    'แดง+น้ำเงิน = ม่วง',
-    'คาร์บอนเป็นธาตุอโลหะ',
-  ];
-  List<bool> answers = [true, true, true];
 
   int questionNumber = 0;
+  int score = 0;
+  int lastScore = 0;
+
+  void processAnswer(bool isCorrect) {
+    setState(() {
+      if (isCorrect) {
+        score += 1;
+        scoreKeeper.add(Icon(
+          Icons.check,
+          color: Colors.green[800],
+        ));
+      } else {
+        scoreKeeper.add(const Icon(
+          Icons.close,
+          color: Colors.red,
+        ));
+      }
+      // Next Question
+      if (questionNumber < questions.length - 1) {
+        questionNumber++;
+      } else {
+        lastScoreKeeper = scoreKeeper;
+        lastScore = score;
+        scoreKeeper = [];
+        questionNumber = 0;
+        score = 0;
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -55,17 +101,15 @@ class _QuizPageState extends State<QuizPage> {
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
-        //TODO: 5.แสดงผลคะแนนที่ได้ กำหนดให้ตอบถูกต้องในแต่ละข้อจะได้ 1 คะแนน (นักเรียนอาจต้องเขียนโปรแกรมในส่วนอื่นด้วย เพื่อสามารถแสดงผลคะแนนที่ถูกต้อง)
-
         Expanded(
           flex: 5,
           child: Padding(
-            padding: EdgeInsets.all(10.0),
+            padding: const EdgeInsets.all(10.0),
             child: Center(
               child: Text(
-                questions[questionNumber],
+                questions[questionNumber].question,
                 textAlign: TextAlign.center,
-                style: TextStyle(
+                style: const TextStyle(
                   fontSize: 25.0,
                   color: Colors.black87,
                 ),
@@ -75,12 +119,10 @@ class _QuizPageState extends State<QuizPage> {
         ),
         Expanded(
           child: Padding(
-            padding: EdgeInsets.all(15.0),
+            padding: const EdgeInsets.all(15.0),
             child: ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                  primary: Colors.green
-              ),
-              child: Text(
+              style: ElevatedButton.styleFrom(primary: Colors.green),
+              child: const Text(
                 'True',
                 style: TextStyle(
                   color: Colors.white,
@@ -88,39 +130,18 @@ class _QuizPageState extends State<QuizPage> {
                 ),
               ),
               onPressed: () {
-                bool correctAnswer = answers[questionNumber];
-                if (correctAnswer==true) {
-                  setState(() {
-                    //เมื่อกดปุ่ม True เพิ่มข้อมูลเข้าไปในลิสต์ scoreKeeper โดยใช้ add method
-                    scoreKeeper.add(
-                        Icon(
-                          Icons.check,
-                          color: Colors.green,
-                        ));
-                    //ตรวจสอบว่าข้อคำถามจะไม่เกิน index
-                    if (questionNumber < questions.length-1) {
-                      questionNumber++;
-                    }
-                    else {
-                      //TODO: 1.ถ้าคำถามหมดแล้ว ให้เริ่มต้นใหม่ โดยกลับไปที่คำถามเดิมและเคลียร์ scoreKeeper ด้วย
-
-                    }
-
-                  });
-                }
+                processAnswer(questions[questionNumber].answer);
               },
             ),
           ),
         ),
         Expanded(
           child: Padding(
-            padding: EdgeInsets.all(15.0),
+            padding: const EdgeInsets.all(15.0),
             child: ElevatedButton(
               // color: Colors.red,
-              style: ElevatedButton.styleFrom(
-                primary: Colors.red
-              ),
-              child: Text(
+              style: ElevatedButton.styleFrom(primary: Colors.red),
+              child: const Text(
                 'False',
                 style: TextStyle(
                   fontSize: 20.0,
@@ -128,18 +149,37 @@ class _QuizPageState extends State<QuizPage> {
                 ),
               ),
               onPressed: () {
-                //TODO: 3.ปรับปรุงโค้ด เมื่อกดปุ่ม False แล้วให้มีการทำงานในลักษณะเดียวกับปุ่ม True
-
+                processAnswer(!questions[questionNumber].answer);
               },
             ),
           ),
         ),
         //แสดงผล icon สำหรับ scoreKeeper
-        Row(
-          children: scoreKeeper,
+        Column(
+          children: [
+            Row(
+              children: [
+                const Text("Current Score: "),
+                Row(
+                  children: scoreKeeper,
+                ),
+              ],
+            ),
+            Row(
+              children: [
+                const Text("Last Score: "),
+                Row(
+                  children: lastScoreKeeper,
+                ),
+                const Expanded(
+                  child: SizedBox(),
+                ),
+                Text("Total: $lastScore"),
+              ],
+            ),
+          ],
         )
       ],
     );
   }
 }
-
